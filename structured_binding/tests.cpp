@@ -3,12 +3,12 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <new>
 #include <numeric>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <vector>
-#include <thread>
-#include <new>
 
 #include "catch.hpp"
 
@@ -159,7 +159,7 @@ struct Timestamp
 
 TEST_CASE("structured bindings - how it works")
 {
-    Timestamp t1{11, 50, 0};
+    Timestamp t1 {11, 50, 0};
 
     auto& [hour, min, sec] = t1;
 
@@ -176,33 +176,95 @@ TEST_CASE("structured bindings - how it works")
         auto& sec = t1.s;
     }
 
-    Timestamp t2{11, 58, 0};
+    Timestamp t2 {11, 58, 0};
     alignas(128) auto [t2_hour, t2_min, t2_sec] = t2;
-    
+
     SECTION("works like this - 2")
     {
         alignas(128) auto entity = t2;
         auto& t2_hours = t2.h;
-        auto& t2_min =   t2.m;
-        auto& t2_sec =   t2.s;
+        auto& t2_min = t2.m;
+        auto& t2_sec = t2.s;
     }
 }
 
 void count_events(int& counter)
 {
-    for(size_t i = 0; i < 1'000'000; ++i)
+    for (size_t i = 0; i < 1'000'000; ++i)
         // if even occurs
         ++counter;
 }
 
 TEST_CASE("alignas")
 {
-    int counter1{};
-    alignas(std::hardware_destructive_interference_size) int counter2{};
+    int counter1 {};
+    alignas(std::hardware_destructive_interference_size) int counter2 {};
 
-    std::thread thd1{&count_events, std::ref(counter1)};
-    std::thread thd2{&count_events, std::ref(counter2)};
+    std::thread thd1 {&count_events, std::ref(counter1)};
+    std::thread thd2 {&count_events, std::ref(counter2)};
 
     thd1.join();
     thd2.join();
+}
+
+///////////////////////////////////////////////////////////
+// tuple like protocol
+
+enum Something
+{
+    some = 1,
+    thing,
+    other
+};
+
+const std::map<Something, std::string_view> something_desc = {
+    {some, "some"sv}, 
+    {thing, "thing"sv}, 
+    {other, "other"sv}
+};
+
+// step 1
+template <>
+struct std::tuple_size<Something>
+{
+    static constexpr size_t value = 2;
+};
+
+// step 2
+template <>
+struct std::tuple_element<0, Something>
+{
+    using type = int;
+};
+
+template <>
+struct std::tuple_element<1, Something>
+{
+    using type = std::string_view;
+};
+
+// step 3
+template <size_t Index>
+decltype(auto) get(const Something&);
+
+template <>
+decltype(auto) get<0>(const Something& sth)
+{
+    return static_cast<int>(sth);
+}
+
+template <>
+decltype(auto) get<1>(const Something& sth)
+{
+    return something_desc.at(sth);
+}
+
+TEST_CASE("tuple-like protocol")
+{
+    Something sth = some;
+
+    const auto [index, description] = sth;
+
+    REQUIRE(index == 0);
+    REQUIRE(description == "some"sv);
 }
