@@ -278,8 +278,7 @@ TEST_CASE("CTAD + std library")
 
         set numbers(lst.begin(), lst.end());
 
-        map mp1 = { pair{1, "one"s}, {2, "two"s} };
-
+        //map mp1 = { pair{1, "one"s}, {2, "two"s} };
 
         array arr1 = {1, 2, 3, 4}; // array<int, 4>
     }
@@ -309,4 +308,48 @@ namespace Explain
 TEST_CASE("Array + deduction")
 {
     Explain::Array arr = {1, 2, 3};
+}
+
+template <auto N>
+struct Value
+{
+    using type = decltype(N);
+    constexpr static auto value{N};
+};
+
+template <auto... Ns> struct ValueList { };
+
+template <auto N, decltype(N)... Ns> struct SameValueList { };
+
+TEST_CASE("auto + template parameters")
+{
+    static_assert(Value<42>::value == 42); 
+    static_assert(is_same_v<Value<42>::type, int>);
+
+    static_assert(Value<true>::value == true);
+    static_assert(is_same_v<Value<true>::type, bool>);
+
+    using VL = ValueList<1, 42u, true, false, nullptr>;
+    using SVL = SameValueList<1, 2, 3, 4>;    
+}
+
+template <typename T>
+class UniquePtr
+{
+    T* ptr_;
+public:
+    UniquePtr(nullptr_t) : ptr_{nullptr}
+    {}
+
+    T* get() const
+    {
+        return ptr_;
+    }
+};
+
+TEST_CASE("nullptr_t")
+{
+    UniquePtr<int> uptr = nullptr;
+
+    REQUIRE(uptr.get() == nullptr);
 }
