@@ -1,5 +1,9 @@
 # Szkolenie - Programowanie w C++17 #
 
+## Ankieta
+
+* https://forms.gle/vVoVtQ6E7SmL6hzW6
+
 ## Dokumentacja + slajdy
 
 * https://infotraining.bitbucket.io/cpp-17
