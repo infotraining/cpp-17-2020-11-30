@@ -214,6 +214,6 @@ TEST_CASE("string_view + optional + constexr")
 
     static_assert(ids[1] == "two"sv);
 
-    constexpr optional opt_id = find_id(ids, "four"sv);
+    constexpr optional opt_id = find_id(ids, "two"sv);
     static_assert(opt_id.has_value());
 }
